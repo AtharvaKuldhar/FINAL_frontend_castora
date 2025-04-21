@@ -64,7 +64,7 @@ const router = createBrowserRouter([
         element: <CreateElection />
       },
       {
-        path: 'communities/:id/elections',
+        path: 'election',
         element: <Elections />
       },
       {
