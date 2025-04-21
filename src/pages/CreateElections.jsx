@@ -348,7 +348,7 @@ import axios from 'axios';
 import { ethers } from 'ethers';
 import ElectionFactoryABI from '../abi/ElectionFactoryABI.json';
 
-const ELECTION_FACTORY_ADDRESS = '0x71431f8c5C314550655BFEeEAC464f6619AC033f';
+const ELECTION_FACTORY_ADDRESS = '0x264af3B7dd4963004D6ACa5EB8a15550970eFe92';
 
 export default function CreateElection() {
   const [electionName, setElectionName] = useState('');
