@@ -54,7 +54,7 @@ const Navbar = () => {
     <header className="w-full fixed top-0 left-0 h-16 bg-gray-950 text-white flex items-center justify-between px-6 shadow-md z-30">
       {/* Logo - Centered */}
       <Link to="/Home" className="text-2xl font-bold text-emerald-400 mx-auto sm:mx-0">
-        CASTORA
+        ChainVote
       </Link>
 
       {/* Navigation Links */}
