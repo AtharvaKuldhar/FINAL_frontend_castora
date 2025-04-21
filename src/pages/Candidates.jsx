@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
 import axios from 'axios';
 import { ethers } from 'ethers';
+// import jwtDecode from 'jwt-decode'; // Uncomment for JWT voterId
 
 const ElectionABI = [
   {
@@ -28,11 +28,16 @@ const ElectionABI = [
     stateMutability: 'view',
     type: 'function',
   },
+  {
+    inputs: [],
+    name: 'getContractBalance',
+    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
 ];
 
 const Candidate = () => {
-  const dispatch = useDispatch();
-  const selectedVoteCandidate = useSelector((state) => state.vote?.selectedVoteCandidate);
   const [candidates, setCandidates] = useState([]);
   const [electionAddress, setElectionAddress] = useState('');
   const [loading, setLoading] = useState(true);
@@ -50,10 +55,10 @@ const Candidate = () => {
 
         // POST request to /getSelectedCandidates
         const response = await axios.post(
-          'http://localhost:5001/getSelectedCandidates',
+          '/getSelectedCandidates',
           { electionId },
           {
-            headers: { token: `Bearer ${localStorage.getItem('token')}` },
+            headers: { Auttoken: `Bearer ${localStorage.getItem('token')}` },
           }
         );
         const { electionData, candidates: apiCandidates } = response.data;
@@ -80,8 +85,22 @@ const Candidate = () => {
       }
     };
 
-    // Set voterId (assumed to be stored in localStorage; adjust as needed)
+    // Set voterId from localStorage
     setVoterId(localStorage.getItem('voterId') || '');
+
+    // Optional: Use JWT for voterId (uncomment if needed)
+    /*
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const { voterId } = jwtDecode(token);
+        setVoterId(voterId || '');
+      } catch (err) {
+        console.error('Invalid JWT:', err);
+      }
+    }
+    */
+
     fetchCandidates();
   }, []);
 
@@ -104,10 +123,10 @@ const Candidate = () => {
       setLoading(true);
       setError(null);
 
-      // Initialize provider and contract with relayer wallet
+      // Initialize provider and company account
       const provider = new ethers.providers.JsonRpcProvider(process.env.REACT_APP_RPC_URL);
-      const relayerWallet = new ethers.Wallet(process.env.REACT_APP_RELAYER_PRIVATE_KEY, provider);
-      const contract = new ethers.Contract(electionAddress, ElectionABI, relayerWallet);
+      const companyWallet = new ethers.Wallet(process.env.REACT_APP_RELAYER_PRIVATE_KEY, provider);
+      const contract = new ethers.Contract(electionAddress, ElectionABI, companyWallet);
 
       // Check voter eligibility
       const isVoter = await contract.isVoter(voterId);
@@ -117,6 +136,13 @@ const Candidate = () => {
         return;
       } else if (hasVoted) {
         setError('You have already voted');
+        return;
+      }
+
+      // Check contract balance
+      const balance = await contract.getContractBalance();
+      if (balance.lt(ethers.utils.parseEther('0.01'))) {
+        setError('Contract balance too low to vote');
         return;
       }
 
