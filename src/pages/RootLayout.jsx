@@ -1,21 +1,33 @@
-import React from 'react'
-import { Outlet, useLocation } from 'react-router-dom'
+import React from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
 import NavbarLanding from '../components/NavbarLanding';
 import NavbarHome from '../components/NavbarHome';
+
 const RootLayout = () => {
   const location = useLocation();
-  console.log("Current Path:", location.pathname); 
+  const path = location.pathname;
 
-  const isLandingOrAbout = location.pathname === '/' || location.pathname === '/about';
-  const isHome = location.pathname === '/home';
+  // Conditions
+  const isLandingPage = path === '/';
+  const useLandingNavbar = path === '/landing' || path === '/about';
+  const useHomeNavbar = !isLandingPage && !useLandingNavbar;
+
   return (
     <>
-      {isLandingOrAbout ? <NavbarLanding /> : <NavbarHome />}
+      {useLandingNavbar && <NavbarLanding />}
+      {useHomeNavbar && <NavbarHome />}
+      
+      {/* Only render <main> when not on "/" */}
+      {!isLandingPage && (
         <main>
-          <Outlet/>
+          <Outlet />
         </main>
-    </>
-  )
-}
+      )}
 
-export default RootLayout
+      {/* Render outlet directly for landing page */}
+      {isLandingPage && <Outlet />}
+    </>
+  );
+};
+
+export default RootLayout;
