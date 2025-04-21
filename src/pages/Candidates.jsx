@@ -1,27 +1,59 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import Candidate from '../components/Candidate';
-import ConfirmVote from '../components/ConfirmVote';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import axios from 'axios';
+import { ethers } from 'ethers';
 
-const Candidates = () => {
-  const { id } = useParams();
-  const selectedVoteCandidate = useSelector((state) => state.vote.selectedVoteCandidate);
+const ElectionABI = [
+  {
+    inputs: [
+      { internalType: 'string', name: 'voter', type: 'string' },
+      { internalType: 'string', name: 'candidateName', type: 'string' },
+    ],
+    name: 'vote',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [{ internalType: 'string', name: '', type: 'string' }],
+    name: 'isVoter',
+    outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ internalType: 'string', name: '', type: 'string' }],
+    name: 'hasVoted',
+    outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+];
+
+const Candidate = () => {
+  const dispatch = useDispatch();
+  const selectedVoteCandidate = useSelector((state) => state.vote?.selectedVoteCandidate);
   const [candidates, setCandidates] = useState([]);
   const [electionAddress, setElectionAddress] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [confirmVote, setConfirmVote] = useState(false);
+  const [selectedCandidate, setSelectedCandidate] = useState(null);
+  const [voterId, setVoterId] = useState('');
 
   useEffect(() => {
     const fetchCandidates = async () => {
       try {
+        // Get election ID from localStorage (set in Elections component)
+        const electionId = localStorage.getItem('selectedElectionId');
+        if (!electionId) throw new Error('No election selected');
+
         // POST request to /getSelectedCandidates
         const response = await axios.post(
-          '/getSelectedCandidates',
-          { electionId: id },
+          'http://localhost:5001/getSelectedCandidates',
+          { electionId },
           {
-            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+            headers: { token: `Bearer ${localStorage.getItem('token')}` },
           }
         );
         const { electionData, candidates: apiCandidates } = response.data;
@@ -47,8 +79,62 @@ const Candidates = () => {
         setLoading(false);
       }
     };
+
+    // Set voterId (assumed to be stored in localStorage; adjust as needed)
+    setVoterId(localStorage.getItem('voterId') || '');
     fetchCandidates();
-  }, [id]);
+  }, []);
+
+  const openConfirmVote = (candidate) => {
+    setSelectedCandidate(candidate);
+    setConfirmVote(true);
+  };
+
+  const closeConfirmVote = () => {
+    setConfirmVote(false);
+    setSelectedCandidate(null);
+  };
+
+  const handleVote = async () => {
+    if (!voterId) {
+      setError('Voter ID not provided');
+      return;
+    }
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Initialize provider and contract with relayer wallet
+      const provider = new ethers.providers.JsonRpcProvider(process.env.REACT_APP_RPC_URL);
+      const relayerWallet = new ethers.Wallet(process.env.REACT_APP_RELAYER_PRIVATE_KEY, provider);
+      const contract = new ethers.Contract(electionAddress, ElectionABI, relayerWallet);
+
+      // Check voter eligibility
+      const isVoter = await contract.isVoter(voterId);
+      const hasVoted = await contract.hasVoted(voterId);
+      if (!isVoter) {
+        setError('You are not an eligible voter');
+        return;
+      } else if (hasVoted) {
+        setError('You have already voted');
+        return;
+      }
+
+      // Submit vote transaction
+      const tx = await contract.vote(voterId, selectedCandidate.fullName, {
+        gasLimit: 200000,
+      });
+      await tx.wait();
+
+      // Close modal and navigate to success page
+      closeConfirmVote();
+      window.location.href = '/congrats';
+    } catch (err) {
+      setError(err.message || 'Error submitting vote');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <section className="p-5 bg-black min-h-screen">
@@ -66,15 +152,60 @@ const Candidates = () => {
       ) : (
         <div className="grid grid-cols-3 gap-4">
           {candidates.length > 0 ? (
-            candidates.map((candidate) => <Candidate key={candidate._id} {...candidate} />)
+            candidates.map((candidate) => (
+              <div
+                key={candidate._id}
+                className="w-full h-48 overflow-hidden items-center bg-gray-900 border border-gray-700 flex flex-col justify-center"
+              >
+                <h5 className="text-center font-bold text-white mb-4">
+                  {candidate.fullName?.length > 20
+                    ? candidate.fullName.substring(0, 20) + '...'
+                    : candidate.fullName}
+                </h5>
+                <button
+                  className="bg-green-500 font-bold text-center text-white px-4 py-2 rounded-2xl transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-2 hover:scale-105"
+                  onClick={() => openConfirmVote(candidate)}
+                >
+                  Vote
+                </button>
+              </div>
+            ))
           ) : (
             <p className="text-white text-center">No candidates found for this election.</p>
           )}
         </div>
       )}
-      {selectedVoteCandidate && <ConfirmVote />}
+      {confirmVote && (
+        <section className="fixed inset-0 flex items-center justify-center backdrop-blur-md p-4">
+          <div className="bg-gray-900 rounded-xl shadow-lg overflow-hidden max-w-md w-full p-6 border border-gray-700">
+            <h5 className="text-lg font-semibold mb-4 text-center text-white">
+              Please confirm your vote
+            </h5>
+            <h2 className="text-2xl font-bold text-center mb-4 text-white">
+              {selectedCandidate.fullName}
+            </h2>
+            {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+            <div className="flex justify-around">
+              <button
+                className="bg-gray-500 font-bold text-white px-4 py-2 rounded-2xl transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-1 hover:scale-105"
+                onClick={closeConfirmVote}
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleVote}
+                className="bg-green-500 font-bold text-white px-4 py-2 rounded-2xl transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-1 hover:scale-105"
+                disabled={loading || !voterId}
+              >
+                {loading ? 'Submitting...' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
     </section>
   );
 };
 
-export default Candidates;
+export default Candidate;

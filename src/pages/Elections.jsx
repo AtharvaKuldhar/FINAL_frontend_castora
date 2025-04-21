@@ -109,7 +109,7 @@ const Elections = () => {
                       // Store the selected election ID in localStorage
                       localStorage.setItem('selectedElectionId', election.id || election._id);
                       // Navigate to election details page
-                      window.location.href = `/elections/${election.id || election._id}`;
+                      window.location.href = `/elections/vote`;
                     }}
                     className="bg-gray-800 text-white font-semibold px-6 py-3 rounded-xl transition duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1 hover:scale-105"
                   >

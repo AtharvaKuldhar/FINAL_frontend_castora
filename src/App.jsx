@@ -72,7 +72,7 @@ const router = createBrowserRouter([
         element: <ElectionDetails />
       },
       {
-        path: 'elections/:id/candidates',
+        path: 'elections/vote',
         element: <Candidates />
       },
       {
