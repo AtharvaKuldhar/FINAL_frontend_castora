@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/SidebarLeft';
-import VerticalCard from '../components/VerticalCard';
 import axios from 'axios';
 import { Menu, X, Shield, Server, AlertTriangle, ChevronRight, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';

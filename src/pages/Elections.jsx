@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/SidebarLeft';
-import VerticalCard from '../components/VerticalCard';
 import axios from 'axios';
 import { ethers } from 'ethers';
 import ElectionABI from '../abi/ElectionABI.json';
