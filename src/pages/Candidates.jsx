@@ -1,41 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { ethers } from 'ethers';
-// import jwtDecode from 'jwt-decode'; // Uncomment for JWT voterId
+import UserVerification from '../functions/userVerification';
 
-const ElectionABI = [
-  {
-    inputs: [
-      { internalType: 'string', name: 'voter', type: 'string' },
-      { internalType: 'string', name: 'candidateName', type: 'string' },
-    ],
-    name: 'vote',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  {
-    inputs: [{ internalType: 'string', name: '', type: 'string' }],
-    name: 'isVoter',
-    outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [{ internalType: 'string', name: '', type: 'string' }],
-    name: 'hasVoted',
-    outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'getContractBalance',
-    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
-    stateMutability: 'view',
-    type: 'function',
-  },
-];
+import ElectionABI from '../abi/ElectionABI.json';
 
 const Candidate = () => {
   const [candidates, setCandidates] = useState([]);
@@ -58,7 +26,7 @@ const Candidate = () => {
           '/getSelectedCandidates',
           { electionId },
           {
-            headers: { Auttoken: `Bearer ${localStorage.getItem('token')}` },
+            headers: { token: `Bearer ${localStorage.getItem('token')}` },
           }
         );
         const { electionData, candidates: apiCandidates } = response.data;
@@ -86,7 +54,11 @@ const Candidate = () => {
     };
 
     // Set voterId from localStorage
-    setVoterId(localStorage.getItem('voterId') || '');
+    const verification=UserVerification(localStorage.getItem('token'));
+    if (verification) {
+      setVoterId(verification.id || '');
+      localStorage.setItem('voterId', verification.id || '');
+    }
 
     // Optional: Use JWT for voterId (uncomment if needed)
     /*
