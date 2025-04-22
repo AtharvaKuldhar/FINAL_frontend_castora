@@ -15,11 +15,9 @@ const Candidate = () => {
   useEffect(() => {
     const fetchCandidates = async () => {
       try {
-        // Get election ID from localStorage (set in Elections component)
         const electionId = localStorage.getItem('selectedElectionId');
         if (!electionId) throw new Error('No election selected');
 
-        // POST request to /getSelectedCandidates
         const response = await axios.post(
           'http://localhost:5001/getSelectedCandidates',
           { electionId },
@@ -28,13 +26,13 @@ const Candidate = () => {
           }
         );
         const { electionData, candidates: apiCandidates } = response.data;
+        console.log('Election Data:', electionData);
+        console.log('Candidates:', apiCandidates);
 
-        // Validate response
         if (!electionData.election_address || !apiCandidates.length) {
           throw new Error('Invalid election data or no candidates found');
         }
 
-        // Map candidates
         const mappedCandidates = apiCandidates.map((candidate) => ({
           _id: candidate.id,
           fullName: candidate.username,
@@ -51,14 +49,15 @@ const Candidate = () => {
       }
     };
 
-    // Set voterId from localStorage
     const token = localStorage.getItem('token');
     axios
       .post('http://localhost:5001/verifier', { token })
       .then((response) => {
         if (response.status === 200) {
-          setVoterId(response.data.verified.id); // Assuming backend sends { verified: { id: ... } }
-          console.log('Voter ID:', response.data.verified.id);
+          console.log('Verifier Response:', response.data);
+          const voterId = response.data.verified.id.trim();
+          setVoterId(voterId);
+          console.log('Set Voter ID:', voterId);
         }
       })
       .catch((error) => {
@@ -87,39 +86,43 @@ const Candidate = () => {
       setLoading(true);
       setError(null);
 
-      // Initialize provider and company account
       const provider = new ethers.JsonRpcProvider('https://sepolia.infura.io/v3/e0be1c8fa97c4895b24b08bc6cb0aaef');
       const companyWallet = new ethers.Wallet('27f4767ba4fd4d2009855fcc0e05f2c14d7edb859a74920bf8911c474da32fff', provider);
       const contract = new ethers.Contract(electionAddress, ElectionABI, companyWallet);
+      console.log('Contract Address:', electionAddress);
+      console.log('Voter ID:', voterId);
 
-      // Check voter eligibility
       const isVoter = await contract.isVoter(voterId);
-      const hasVoted = await contract.hasVoted(voterId);
+      console.log('Is Voter:', isVoter);
       if (!isVoter) {
         setError('You are not an eligible voter');
         return;
-      } else if (hasVoted) {
+      }
+
+      const hasVoted = await contract.hasVoted(voterId);
+      console.log('Has Voted:', hasVoted);
+      if (hasVoted) {
         setError('You have already voted');
         return;
       }
 
-      // Check contract balance
       const balance = await contract.getContractBalance();
-      if (balance.lt(ethers.parseEther('0.01'))) {
+      console.log('Contract Balance:', balance, typeof balance);
+      if (balance < ethers.parseEther('0.01')) {
         setError('Contract balance too low to vote');
         return;
       }
 
-      // Submit vote transaction
-      const tx = await contract.vote(voterId, selectedCandidate.fullName, {
+      const tx = await contract.vote(voterId, selectedCandidate._id, {
         gasLimit: 200000,
       });
+      console.log('Transaction:', tx);
       await tx.wait();
 
-      // Close modal and navigate to success page
       closeConfirmVote();
       window.location.href = '/congrats';
     } catch (err) {
+      console.error('Vote Error:', err);
       setError(err.message || 'Error submitting vote');
     } finally {
       setLoading(false);

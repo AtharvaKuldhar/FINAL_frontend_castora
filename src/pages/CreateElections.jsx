@@ -446,7 +446,7 @@ export default function CreateElection() {
       if (candidates.length < 2) throw new Error('Select at least two candidates');
       if (!electionName.trim()) throw new Error('Provide a valid election name');
 
-      const voters = users.map(u => u._id).filter(id => id && typeof id === 'string');
+      const voters = users.map(u => u.user_id).filter(id => id && typeof id === 'string');
       if (!voters.length) throw new Error('No valid voters found');
 
       // Log inputs for debugging
