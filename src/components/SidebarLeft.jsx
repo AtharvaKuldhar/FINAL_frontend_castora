@@ -67,20 +67,6 @@ const Sidebar = () => {
     <aside className="w-64 fixed left-0 top-16 h-[calc(100vh-4rem)] bg-black text-white p-5 shadow-xl flex flex-col z-20">
       <nav className="flex flex-col gap-4">
         <NavLink
-          to="/Home"
-          end
-          className={({ isActive }) =>
-            `p-3 rounded-lg text-lg transition ${
-              isActive
-                ? "bg-emerald-500 text-white font-semibold"
-                : "hover:bg-gray-700 hover:text-emerald-400"
-            }`
-          }
-        >
-          📊 Dashboard
-        </NavLink>
-
-        <NavLink
           to="/communities/default/create"
           className={({ isActive }) =>
             `p-3 rounded-lg text-lg transition ${
