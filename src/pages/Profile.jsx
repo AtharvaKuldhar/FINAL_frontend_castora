@@ -166,7 +166,7 @@ const Profile = () => {
             </button>
             <h1 className="text-xl md:text-2xl font-mono text-green-400 tracking-wider flex items-center">
               <Shield size={20} className="mr-2 text-green-500" /> 
-              CYBR/COMM
+              ChainVote
             </h1>
           </div>
         </header>
