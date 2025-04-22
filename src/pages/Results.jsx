@@ -11,32 +11,43 @@ const Results = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch elections from backend
-        const response = await axios.post(
-          'http://localhost:5001/getElections',
-          {},
-          {
-            headers: { token: `Bearer ${localStorage.getItem('token')}` },
-          }
-        );
-        const fetchedElections = response.data.electionData ? [response.data] : response.data.elections || [];
-        console.log('Fetched Elections:', fetchedElections);
+        const community_key = localStorage.getItem('selectedCommunityKey');
+        const token = localStorage.getItem('token');
+
+        // Fetch elections from backend API
+        const response = await axios.get('http://localhost:5001/getElections', {
+          params: { community_key },
+          headers: { token: `Bearer ${token}` },
+        });
+
+        const fetchedElections = response.data;
+        console.log('Fetched Elections from API:', fetchedElections);
 
         const provider = new ethers.JsonRpcProvider('https://sepolia.infura.io/v3/e0be1c8fa97c4895b24b08bc6cb0aaef');
+
         const updatedElections = await Promise.all(
           fetchedElections.map(async (electionData) => {
-            const { _id: id, election_address: contractAddress, electionName, thumbnail, candidates } = electionData;
-            const contract = new ethers.Contract(contractAddress, ElectionABI, provider);
-            const allVotes = await contract.getAllVotes();
-            const totalVotes = allVotes.reduce((sum, vote) => sum + (vote > 0 ? Number(vote) : 0), 0);
+            const { _id: id, election_address: contractAddress, electionName, thumbnail } = electionData;
 
-            // Fetch votes for each candidate
-            const updatedCandidates = await Promise.all(
-              candidates.map(async (candidate) => {
-                const voteCount = await contract.getVotes(candidate.username);
-                return { ...candidate, voteCount: Number(voteCount) };
+            // Connect to the smart contract
+            const contract = new ethers.Contract(contractAddress, ElectionABI, provider);
+
+            // Call getAllVotes to fetch the vote counts
+            const allVotes = await contract.getAllVotes();
+            console.log(`Election ${id} - All Votes from Blockchain:`, allVotes);
+
+            // Fetch candidate names using the candidates function
+            const candidates = await Promise.all(
+              allVotes.map(async (_, index) => {
+                const candidateName = await contract.candidates(index);
+                return { username: candidateName, voteCount: Number(allVotes[index]) };
               })
             );
+            console.log(`Election ${id} - Candidates with Vote Counts:`, candidates);
+
+            // Calculate total votes
+            const totalVotes = allVotes.reduce((sum, vote) => sum + (vote > 0 ? Number(vote) : 0), 0);
+            console.log(`Election ${id} - Total Votes:`, totalVotes);
 
             return {
               id,
@@ -44,7 +55,7 @@ const Results = () => {
               thumbnail: thumbnail || '/default-thumbnail.jpg',
               contractAddress,
               totalVotes,
-              candidates: updatedCandidates,
+              candidates,
             };
           })
         );
@@ -78,7 +89,10 @@ const Results = () => {
     <section className="results w-8/12 mx-auto mb-3">
       <div className="container results_container flex flex-col">
         {elections.map((election) => (
-          <article key={election.id} className="result bg-gray-100 rounded-lg shadow-lg p-2 w-10/12 mb-4 overflow-hidden flex flex-col">
+          <article
+            key={election.id}
+            className="result bg-gray-100 rounded-lg shadow-lg p-2 w-10/12 mb-4 overflow-hidden flex flex-col"
+          >
             <header className="result_header flex items-center justify-between bg-gray-200 border-2 border-gray-50 rounded-md">
               <h4 className="font-bold p-2">{election.title}</h4>
               <div className="result_header-image w-12 aspect-square overflow-hidden rounded-full m-2">
@@ -86,9 +100,9 @@ const Results = () => {
               </div>
             </header>
             <ul className="result_list flex flex-col gap-2 p-4 pt-2">
-              {election.candidates.map((candidate) => (
+              {election.candidates.map((candidate, index) => (
                 <CandidateRating
-                  key={candidate.id}
+                  key={index}
                   name={candidate.username}
                   voteCount={candidate.voteCount}
                   totalVotes={election.totalVotes}
