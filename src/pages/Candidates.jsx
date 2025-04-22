@@ -57,9 +57,8 @@ const Candidate = () => {
       .post('http://localhost:5001/verifier', { token })
       .then((response) => {
         if (response.status === 200) {
-          setVoterId(response.data.verified.id); // Assuming backend sends { id: ... }
-          console.log(response.data.verified.id)
-          console.log(voterId);
+          setVoterId(response.data.verified.id); // Assuming backend sends { verified: { id: ... } }
+          console.log('Voter ID:', response.data.verified.id);
         }
       })
       .catch((error) => {
@@ -89,8 +88,8 @@ const Candidate = () => {
       setError(null);
 
       // Initialize provider and company account
-      const provider = new ethers.providers.JsonRpcProvider(process.env.REACT_APP_RPC_URL);
-      const companyWallet = new ethers.Wallet(process.env.REACT_APP_RELAYER_PRIVATE_KEY, provider);
+      const provider = new ethers.JsonRpcProvider('https://sepolia.infura.io/v3/e0be1c8fa97c4895b24b08bc6cb0aaef');
+      const companyWallet = new ethers.Wallet('27f4767ba4fd4d2009855fcc0e05f2c14d7edb859a74920bf8911c474da32fff', provider);
       const contract = new ethers.Contract(electionAddress, ElectionABI, companyWallet);
 
       // Check voter eligibility
@@ -106,7 +105,7 @@ const Candidate = () => {
 
       // Check contract balance
       const balance = await contract.getContractBalance();
-      if (balance.lt(ethers.utils.parseEther('0.01'))) {
+      if (balance.lt(ethers.parseEther('0.01'))) {
         setError('Contract balance too low to vote');
         return;
       }
