@@ -71,8 +71,32 @@ const Elections = () => {
 
   const handlePublishResults = async (electionId) => {
     try {
+      // Request MetaMask connection
+      const { ethers } = window;
+      if (!ethers || !window.ethereum) {
+        alert('Please install MetaMask to proceed.');
+        return;
+      }
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      await provider.send('eth_requestAccounts', []);
+      const signer = provider.getSigner();
+      
+      // Import ElectionABI dynamically (assuming it's available)
+      const response = await axios.get('http://localhost:5001/abi/ElectionABI.json'); // Adjust path as needed
+      const ElectionABI = response.data;
+
+      // Connect to the contract
+      const contractAddress = currentElections.find(e => e._id === electionId)?.election_address; // Fetch from elections data
+      if (!contractAddress) throw new Error('Contract address not found');
+      const contract = new ethers.Contract(contractAddress, ElectionABI, signer);
+
+      // Withdraw funds using MetaMask
+      const tx = await contract.withdrawAllFunds({ gasLimit: 200000 });
+      await tx.wait();
+      console.log(`Funds withdrawn from ${contractAddress}:`, tx.hash);
+
+      // Call the API to publish results after withdrawal
       const token = localStorage.getItem('token');
-      // Call the API to publish results
       await axios.post('http://localhost:5001/publishResults', 
         { electionId },
         {
@@ -100,10 +124,14 @@ const Elections = () => {
       const allElections = [...electionsData.ongoing, ...updatedPastElections];
       localStorage.setItem('ElectionsData', JSON.stringify(allElections));
 
-      alert('Results published successfully!');
+      alert('Results published and funds withdrawn successfully!');
     } catch (error) {
-      console.error('Error publishing results:', error);
-      alert('Failed to publish results. Please try again.');
+      console.error('Error publishing results or withdrawing funds:', error);
+      if (error.code === 'ACTION_REJECTED') {
+        alert('Transaction rejected by MetaMask. Please try again.');
+      } else {
+        alert('Failed to publish results or withdraw funds. Please ensure you are the admin and try again.');
+      }
     }
   };
 
