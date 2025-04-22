@@ -10,27 +10,27 @@ export default function CreateElection() {
   const [candidateDropdowns, setCandidateDropdowns] = useState(['', '']);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingCandidates, setLoadingCandidates] = useState(true);
   const [error, setError] = useState('');
   const [applicableFields, setApplicableFields] = useState([{ field: '', value: '' }]);
   const [description, setDescription] = useState('');
-  // Add new state variables for start and end dates
   const [startDate, setStartDate] = useState('');
   const [startTime, setStartTime] = useState('');
   const [endDate, setEndDate] = useState('');
   const [endTime, setEndTime] = useState('');
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [txHash, setTxHash] = useState('');
 
-  // Set default start date to today and end date to 30 days later when component mounts
+  // Set default dates
   useEffect(() => {
     const today = new Date();
     const thirtyDaysLater = new Date(today);
     thirtyDaysLater.setDate(today.getDate() + 30);
     
-    // Format dates for input fields (YYYY-MM-DD)
     const formatDate = (date) => {
       return date.toISOString().split('T')[0];
     };
     
-    // Format times for input fields (HH:MM)
     const formatTime = (date) => {
       return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
     };
@@ -48,10 +48,11 @@ export default function CreateElection() {
       const token = localStorage.getItem('token');
       if (!communityKey || !token) {
         setError('Please select a community and ensure you are logged in.');
+        setLoadingCandidates(false);
         return;
       }
       try {
-        setLoading(true);
+        setLoadingCandidates(true);
         const response = await axios.post(
           'http://localhost:5001/getCandidates',
           { community_key: communityKey },
@@ -67,7 +68,7 @@ export default function CreateElection() {
             typeof candidate._id === 'string' && 
             candidate._id && 
             candidate.username && 
-            candidate.user_id; // Ensure user_id exists
+            candidate.user_id;
           if (!isValid) {
             console.log('Filtered out candidate:', candidate);
           }
@@ -81,7 +82,7 @@ export default function CreateElection() {
         console.error('Error fetching candidates:', err);
         setError('Failed to load candidates. Please try again.');
       } finally {
-        setLoading(false);
+        setLoadingCandidates(false);
       }
     };
     fetchCandidates();
@@ -126,6 +127,7 @@ export default function CreateElection() {
   const handleCreateElection = async () => {
     setLoading(true);
     setError('');
+    setShowSuccess(false);
     try {
       // Validate dates and times
       if (!startDate || !startTime || !endDate || !endTime) {
@@ -194,6 +196,8 @@ export default function CreateElection() {
       const tx = await contract.createElection(electionName, voters, selectedCandidates, {
         value: depositAmount,
       });
+      
+      setTxHash(tx.hash);
       const receipt = await tx.wait();
 
       // Extract election address from event
@@ -236,11 +240,14 @@ export default function CreateElection() {
       );
 
       // Success feedback
-      alert(`Election created successfully! TX Hash: ${tx.hash}`);
-      setElectionName('');
-      setCandidateDropdowns(['', '']);
-      setApplicableFields([{ field: '', value: '' }]);
-      setDescription('');
+      setShowSuccess(true);
+      setTimeout(() => {
+        setElectionName('');
+        setCandidateDropdowns(['', '']);
+        setApplicableFields([{ field: '', value: '' }]);
+        setDescription('');
+        setShowSuccess(false);
+      }, 5000);
     } catch (err) {
       console.error('Error creating election:', err);
       if (err.response) {
@@ -253,45 +260,46 @@ export default function CreateElection() {
     }
   };
 
+  // Success message component
+  const SuccessMessage = () => (
+    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-70">
+      <div className="bg-black border border-green-500 text-green-500 rounded-lg p-8 max-w-md w-full mx-4 animate-pulse shadow-lg shadow-green-500/50">
+        <div className="text-center">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-green-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          <h3 className="text-xl font-bold mb-2">Election Created Successfully!</h3>
+          <p className="mb-4">Your election has been created on the blockchain.</p>
+          <p className="text-sm font-mono overflow-hidden overflow-ellipsis">
+            TX Hash: {txHash}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-2xl">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-          Create New Election
+    <div className="min-h-screen bg-gray-900 text-green-500 flex items-center justify-center p-4">
+      {showSuccess && <SuccessMessage />}
+      
+      <div className="bg-black border border-green-500 rounded-lg shadow-lg shadow-green-500/30 p-6 w-full max-w-2xl">
+        <h2 className="text-2xl font-bold mb-6 text-center border-b border-green-500 pb-4">
+          &lt; Create New Election /&gt;
         </h2>
 
         {error && (
-          <div className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</div>
+          <div className="bg-red-900 text-red-300 border border-red-500 p-3 rounded mb-4 animate-pulse">{error}</div>
         )}
 
-        {loading && !users.length ? (
-          <div className="text-center text-gray-600">
-            <svg
-              className="animate-spin h-5 w-5 mx-auto text-gray-600"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              ></circle>
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
-            </svg>
-            Loading candidates...
+        {loadingCandidates ? (
+          <div className="text-center p-8">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-green-500 border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
+            <p className="mt-4 text-green-400">Loading candidates...</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium mb-1">
                 Election Name
               </label>
               <input
@@ -299,85 +307,85 @@ export default function CreateElection() {
                 value={electionName}
                 onChange={e => setElectionName(e.target.value)}
                 placeholder="Enter election name"
-                className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-2 bg-gray-800 border border-green-500 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 text-white"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium mb-1">
                 Description
               </label>
               <textarea
                 value={description}
                 onChange={e => setDescription(e.target.value)}
                 placeholder="Enter election description"
-                className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-2 bg-gray-800 border border-green-500 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 text-white"
                 rows="4"
               />
             </div>
 
             {/* Start Date and Time */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1">
                   Start Date
                 </label>
                 <input
                   type="date"
                   value={startDate}
                   onChange={e => setStartDate(e.target.value)}
-                  className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full p-2 bg-gray-800 border border-green-500 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 text-white"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1">
                   Start Time
                 </label>
                 <input
                   type="time"
                   value={startTime}
                   onChange={e => setStartTime(e.target.value)}
-                  className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full p-2 bg-gray-800 border border-green-500 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 text-white"
                 />
               </div>
             </div>
 
             {/* End Date and Time */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1">
                   End Date
                 </label>
                 <input
                   type="date"
                   value={endDate}
                   onChange={e => setEndDate(e.target.value)}
-                  className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full p-2 bg-gray-800 border border-green-500 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 text-white"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1">
                   End Time
                 </label>
                 <input
                   type="time"
                   value={endTime}
                   onChange={e => setEndTime(e.target.value)}
-                  className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full p-2 bg-gray-800 border border-green-500 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 text-white"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Select Candidates (Max 5)
+              <label className="block text-sm font-medium mb-1">
+                Select Candidates <span className="text-green-400">(Max 5)</span>
               </label>
               {candidateDropdowns.map((value, index) => (
                 <select
                   key={`candidate-${index}-${value}`}
                   value={value}
                   onChange={e => handleCandidateChange(index, e.target.value)}
-                  className="w-full p-2 border rounded-md mb-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full p-2 bg-gray-800 border border-green-500 rounded-md mb-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 text-white"
                 >
                   <option value="">-- Select a candidate --</option>
                   {users.map((user, userIndex) => (
@@ -393,60 +401,78 @@ export default function CreateElection() {
               <button
                 onClick={handleAddCandidate}
                 disabled={candidateDropdowns.length >= 5}
-                className="mt-2 bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 disabled:bg-gray-100 disabled:text-gray-400"
+                className="mt-2 bg-gray-800 text-green-500 border border-green-500 px-4 py-2 rounded-md hover:bg-gray-700 disabled:bg-gray-900 disabled:text-gray-500 disabled:border-gray-500 transition-all"
               >
-                Add Another Candidate
+                + Add Candidate
               </button>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Applicable Fields (Optional)
+              <label className="block text-sm font-medium mb-1">
+                Applicable Fields <span className="text-green-400">(Optional)</span>
               </label>
               {applicableFields.map((field, index) => (
-                <div key={`field-${index}`} className="flex space-x-2 mb-2">
+                <div key={`field-${index}`} className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 mb-2">
                   <input
                     type="text"
                     value={field.field}
                     onChange={e => handleFieldChange(index, 'field', e.target.value)}
-                    placeholder="Field name (optional)"
-                    className="w-1/2 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Field name"
+                    className="w-full sm:w-1/2 p-2 bg-gray-800 border border-green-500 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 text-white"
                   />
                   <input
                     type="text"
                     value={field.value}
                     onChange={e => handleFieldChange(index, 'value', e.target.value)}
-                    placeholder="Field value (optional)"
-                    className="w-1/2 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Field value"
+                    className="w-full sm:w-1/2 p-2 bg-gray-800 border border-green-500 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 text-white"
                   />
                 </div>
               ))}
               <button
                 onClick={handleAddField}
-                className="mt-2 bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300"
+                className="mt-2 bg-gray-800 text-green-500 border border-green-500 px-4 py-2 rounded-md hover:bg-gray-700 transition-all"
               >
-                Add Another Field
+                + Add Field
               </button>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium mb-1">
                 Number of Voters
               </label>
               <input
                 type="number"
                 value={users.length}
                 disabled
-                className="w-full p-2 border rounded-md bg-gray-100"
+                className="w-full p-2 bg-gray-800 border border-gray-600 rounded-md text-gray-400"
               />
+              <p className="text-xs mt-1 text-green-400">This is the number of eligible voters in this community</p>
             </div>
 
             <button
               onClick={handleCreateElection}
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 disabled:bg-blue-300"
+              className={`w-full py-3 rounded-md font-bold transition-all duration-300 ${
+                loading
+                  ? "bg-gray-800 border border-green-500 text-green-500 relative overflow-hidden"
+                  : "bg-green-600 hover:bg-green-700 text-black"
+              }`}
             >
-              {loading ? 'Creating Election...' : 'Create Election'}
+              {loading ? (
+                <>
+                  <span className="opacity-0">Creating Election...</span>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="flex space-x-1">
+                      <div className="h-2 w-2 bg-green-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                      <div className="h-2 w-2 bg-green-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                      <div className="h-2 w-2 bg-green-500 rounded-full animate-bounce"></div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                "Create Election"
+              )}
             </button>
           </div>
         )}
