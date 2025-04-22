@@ -148,15 +148,15 @@ const Candidate = () => {
             candidates.map((candidate) => (
               <div
                 key={candidate._id}
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg p-4 flex flex-row items-center justify-between h-20"
+                className="w-full bg-green-500 border border-green-900 rounded-lg p-4 flex flex-row items-center justify-between h-20"
               >
-                <h5 className="text-left font-bold text-white">
+                <h5 className="text-left font-bold text-black">
                   {candidate.fullName?.length > 20
                     ? candidate.fullName.substring(0, 20) + '...'
                     : candidate.fullName}
                 </h5>
                 <button
-                  className="bg-green-500 font-bold text-white px-4 py-2 rounded-2xl transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-2 hover:scale-105"
+                  className="bg-black font-bold text-white px-4 py-2 rounded-2xl transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-2 hover:scale-105"
                   onClick={() => openConfirmVote(candidate)}
                 >
                   Vote

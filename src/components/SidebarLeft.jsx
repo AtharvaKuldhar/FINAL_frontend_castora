@@ -64,7 +64,7 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className="w-64 fixed left-0 top-16 h-[calc(100vh-4rem)] bg-gray-900 text-white p-5 shadow-xl flex flex-col z-20">
+    <aside className="w-64 fixed left-0 top-16 h-[calc(100vh-4rem)] bg-black text-white p-5 shadow-xl flex flex-col z-20">
       <nav className="flex flex-col gap-4">
         <NavLink
           to="/Home"
@@ -127,7 +127,7 @@ const Sidebar = () => {
               : "hover:bg-blue-500"
           }`}
         >
-          My Profile
+         😸 My Profile
         </NavLink>
       </nav>
 
