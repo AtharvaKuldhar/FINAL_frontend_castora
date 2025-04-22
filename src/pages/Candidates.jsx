@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { ethers } from 'ethers';
-
-
 import ElectionABI from '../abi/ElectionABI.json';
 
 const Candidate = () => {
@@ -23,7 +21,7 @@ const Candidate = () => {
 
         // POST request to /getSelectedCandidates
         const response = await axios.post(
-          '/getSelectedCandidates',
+          'http://localhost:5001/getSelectedCandidates',
           { electionId },
           {
             headers: { token: `Bearer ${localStorage.getItem('token')}` },
@@ -54,31 +52,19 @@ const Candidate = () => {
     };
 
     // Set voterId from localStorage
-
-    const token = localStorage.getItem("token");
-
-    axios.post("http://localhost:5001/verifier", { token })
-      .then(response => {
+    const token = localStorage.getItem('token');
+    axios
+      .post('http://localhost:5001/verifier', { token })
+      .then((response) => {
         if (response.status === 200) {
-          setVoterId(response.data.id); // Assuming backend sends { id: ... }
-          console.log("voter id",voterId);
+          setVoterId(response.data.verified.id); // Assuming backend sends { id: ... }
+          console.log(response.data.verified.id)
+          console.log(voterId);
         }
       })
-      .catch(error => {
-        console.error("Verification failed:", error);
+      .catch((error) => {
+        console.error('Verification failed:', error);
       });
-    // Optional: Use JWT for voterId (uncomment if needed)
-    /*
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const { voterId } = jwtDecode(token);
-        setVoterId(voterId || '');
-      } catch (err) {
-        console.error('Invalid JWT:', err);
-      }
-    }
-    */
 
     fetchCandidates();
   }, []);
@@ -155,20 +141,20 @@ const Candidate = () => {
       ) : error ? (
         <p className="text-red-500 text-center">{error}</p>
       ) : (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="flex flex-col gap-4 mx-auto max-w-7xl">
           {candidates.length > 0 ? (
             candidates.map((candidate) => (
               <div
                 key={candidate._id}
-                className="w-full h-48 overflow-hidden items-center bg-gray-900 border border-gray-700 flex flex-col justify-center"
+                className="w-full bg-gray-900 border border-gray-700 rounded-lg p-4 flex flex-row items-center justify-between h-20"
               >
-                <h5 className="text-center font-bold text-white mb-4">
+                <h5 className="text-left font-bold text-white">
                   {candidate.fullName?.length > 20
                     ? candidate.fullName.substring(0, 20) + '...'
                     : candidate.fullName}
                 </h5>
                 <button
-                  className="bg-green-500 font-bold text-center text-white px-4 py-2 rounded-2xl transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-2 hover:scale-105"
+                  className="bg-green-500 font-bold text-white px-4 py-2 rounded-2xl transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-2 hover:scale-105"
                   onClick={() => openConfirmVote(candidate)}
                 >
                   Vote
