@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { ethers } from 'ethers';
-import UserVerification from '../functions/userVerification';
+
 
 import ElectionABI from '../abi/ElectionABI.json';
 
@@ -54,12 +54,19 @@ const Candidate = () => {
     };
 
     // Set voterId from localStorage
-    const verification=UserVerification(localStorage.getItem('token'));
-    if (verification) {
-      setVoterId(verification.id || '');
-      localStorage.setItem('voterId', verification.id || '');
-    }
 
+    const token = localStorage.getItem("token");
+
+    axios.post("http://localhost:5001/verifier", { token })
+      .then(response => {
+        if (response.status === 200) {
+          setVoterId(response.data.id); // Assuming backend sends { id: ... }
+          console.log("voter id",voterId);
+        }
+      })
+      .catch(error => {
+        console.error("Verification failed:", error);
+      });
     // Optional: Use JWT for voterId (uncomment if needed)
     /*
     const token = localStorage.getItem('token');
