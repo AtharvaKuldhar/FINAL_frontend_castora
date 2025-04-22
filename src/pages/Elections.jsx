@@ -180,7 +180,7 @@ const Elections = () => {
         buttonAction = () => {
           if (election.resultsPublished) {
             localStorage.setItem('selectedElectionId', election._id);
-            navigate(`/elections/results`);
+            navigate(`/results`);
           }
         };
       } else {
