@@ -3,6 +3,7 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/SidebarLeft';
 import VerticalCard from '../components/VerticalCard';
 import axios from 'axios';
+import { ethers } from 'ethers'; // Added direct import
 
 const Elections = () => {
   const { id } = useParams();
@@ -76,12 +77,7 @@ const Elections = () => {
         alert('MetaMask is not detected. Please ensure it is installed and enabled.');
         return;
       }
-      const { ethers } = window; // Use ethers from window
-      if (!ethers) {
-        alert('Ethers.js is not loaded. Please check your setup.');
-        return;
-      }
-      const provider = new ethers.BrowserProvider(window.ethereum); // Use BrowserProvider (ethers v6)
+      const provider = new ethers.BrowserProvider(window.ethereum); // Use imported ethers
       // Request account access to ensure MetaMask is active
       await provider.send('eth_requestAccounts', []);
       const signer = await provider.getSigner();
