@@ -8,6 +8,7 @@ const MyCommunities = () => {
   const navigate = useNavigate();
   const [role, setRole] = useState('admin'); // 'admin' | 'voter'
   const [communities, setCommunities] = useState({ admin: [], user: [] });
+  const [communitiesWithPendingResults, setCommunitiesWithPendingResults] = useState([]);
 
   useEffect(() => {
     const fetchCommunities = async () => {
@@ -21,13 +22,52 @@ const MyCommunities = () => {
         });
         console.log(response.data);
         setCommunities(response.data);
+        
+        // If user is admin, check for completed elections with unpublished results
+        if (role === 'admin' && response.data.admin && response.data.admin.length > 0) {
+          await checkForPendingResults(response.data.admin, token);
+        }
       } catch (error) {
         console.error('Error fetching communities:', error);
       }
     };
 
     fetchCommunities();
-  }, []);
+  }, [role]);
+
+  // Check for communities with completed elections that need results published
+  const checkForPendingResults = async (adminCommunities, token) => {
+    try {
+      const pendingResultsCommunities = [];
+      
+      for (const community of adminCommunities) {
+        // Fetch elections for this community
+        const electionsResponse = await axios.get('http://localhost:5001/getElections', {
+          headers: {
+            'token': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          params: {
+            community_key: community.key,
+          },
+        });
+        
+        // Check if any election is completed but results not published
+        const now = new Date();
+        const hasCompletedUnpublishedElections = electionsResponse.data.some(
+          election => new Date(election.endDate) < now && !election.resultsPublished
+        );
+        
+        if (hasCompletedUnpublishedElections) {
+          pendingResultsCommunities.push(community.key);
+        }
+      }
+      
+      setCommunitiesWithPendingResults(pendingResultsCommunities);
+    } catch (error) {
+      console.error('Error checking for pending results:', error);
+    }
+  };
 
   const getDisplayedCommunities = () => {
     if (role === 'admin') return communities.admin || [];
@@ -56,17 +96,49 @@ const MyCommunities = () => {
       // Store selected community key and name in localStorage
       localStorage.setItem('selectedCommunityKey', community.key);
       localStorage.setItem('selectedCommunityName', community.collectionName);
+      localStorage.setItem('role', role);
 
       // Navigate to the elections page
       if (role === 'admin') {
-        // Admin creates elections
-        navigate(`/communities/${community.collectionName}/createelections`);
+        // Navigate to ongoing elections tab
+        navigate(`/election`);
       } else {
         // Voter views elections
         navigate(`/election`);
       }
     } catch (error) {
       console.error('Error fetching elections:', error);
+      alert('Failed to fetch elections. Please try again.');
+    }
+  };
+
+  const handlePublishResults = async (community) => {
+    try {
+      const token = localStorage.getItem('token');
+      // Call the backend to fetch elections
+      const response = await axios.get('http://localhost:5001/getElections', {
+        headers: {
+          'token': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        params: {
+          community_key: community.key,
+        },
+      });
+
+      // Store the elections data in localStorage
+      localStorage.setItem('ElectionsData', JSON.stringify(response.data));
+
+      // Store selected community key and name in localStorage
+      localStorage.setItem('selectedCommunityKey', community.key);
+      localStorage.setItem('selectedCommunityName', community.collectionName);
+      localStorage.setItem('role', role);
+      localStorage.setItem('viewMode', 'publishResults'); // Special flag to indicate we're publishing results
+
+      // Navigate directly to past elections tab
+      navigate(`/election?tab=past`);
+    } catch (error) {
+      console.error('Error fetching elections for publishing results:', error);
       alert('Failed to fetch elections. Please try again.');
     }
   };
@@ -110,7 +182,7 @@ const MyCommunities = () => {
         {/* Communities List */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {displayedCommunities.length === 0 ? (
-            <p className="text-gray-500 text-lg text-center w-full">
+            <p className="text-gray-500 text-lg text-center col-span-full">
               No communities found for <span className="font-semibold">{role}</span> role.
             </p>
           ) : (
@@ -119,13 +191,27 @@ const MyCommunities = () => {
                 <h2 className="text-xl font-semibold text-gray-800 mb-4 text-center">
                   {community.collectionName}
                 </h2>
-                <div className="flex justify-center mt-4">
+                {role === 'admin' && communitiesWithPendingResults.includes(community.key) && (
+                  <div className="mb-3 bg-yellow-100 text-yellow-800 py-2 px-3 rounded-md text-sm">
+                    Elections completed! Results need to be published.
+                  </div>
+                )}
+                <div className="flex flex-col items-center space-y-2 mt-4">
                   <button
                     onClick={() => handleEnterElection(community)}
-                    className="bg-gray-800 text-white font-semibold px-6 py-3 rounded-xl transition duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1 hover:scale-105"
+                    className="bg-gray-800 text-white font-semibold px-6 py-3 rounded-xl transition duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1 hover:scale-105 w-full"
                   >
-                    {role === 'admin' ? 'Start Election' : 'Enter Election'}
+                    {role === 'admin' ? 'Manage Elections' : 'Enter Election'}
                   </button>
+                  
+                  {role === 'admin' && communitiesWithPendingResults.includes(community.key) && (
+                    <button
+                      onClick={() => handlePublishResults(community)}
+                      className="bg-yellow-600 text-white font-semibold px-6 py-3 rounded-xl transition duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1 hover:scale-105 w-full"
+                    >
+                      Publish Results
+                    </button>
+                  )}
                 </div>
               </VerticalCard>
             ))

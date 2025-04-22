@@ -13,6 +13,33 @@ export default function CreateElection() {
   const [error, setError] = useState('');
   const [applicableFields, setApplicableFields] = useState([{ field: '', value: '' }]);
   const [description, setDescription] = useState('');
+  // Add new state variables for start and end dates
+  const [startDate, setStartDate] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [endTime, setEndTime] = useState('');
+
+  // Set default start date to today and end date to 30 days later when component mounts
+  useEffect(() => {
+    const today = new Date();
+    const thirtyDaysLater = new Date(today);
+    thirtyDaysLater.setDate(today.getDate() + 30);
+    
+    // Format dates for input fields (YYYY-MM-DD)
+    const formatDate = (date) => {
+      return date.toISOString().split('T')[0];
+    };
+    
+    // Format times for input fields (HH:MM)
+    const formatTime = (date) => {
+      return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    };
+    
+    setStartDate(formatDate(today));
+    setStartTime(formatTime(today));
+    setEndDate(formatDate(thirtyDaysLater));
+    setEndTime(formatTime(today));
+  }, []);
 
   // Fetch candidates when component mounts
   useEffect(() => {
@@ -86,11 +113,44 @@ export default function CreateElection() {
     setApplicableFields(updated);
   };
 
+  // Function to combine date and time into ISO string
+  const combineDateTime = (date, time) => {
+    if (!date || !time) return null;
+    const [hours, minutes] = time.split(':');
+    const dateObj = new Date(date);
+    dateObj.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0);
+    return dateObj.toISOString();
+  };
+
   // Create election on blockchain and then save to backend
   const handleCreateElection = async () => {
     setLoading(true);
     setError('');
     try {
+      // Validate dates and times
+      if (!startDate || !startTime || !endDate || !endTime) {
+        throw new Error('Please provide both start and end dates with times');
+      }
+      
+      const startDateTime = combineDateTime(startDate, startTime);
+      const endDateTime = combineDateTime(endDate, endTime);
+      
+      if (!startDateTime || !endDateTime) {
+        throw new Error('Invalid date or time format');
+      }
+      
+      const now = new Date();
+      const startDateObj = new Date(startDateTime);
+      const endDateObj = new Date(endDateTime);
+      
+      if (startDateObj < now) {
+        throw new Error('Start date cannot be in the past');
+      }
+      
+      if (endDateObj <= startDateObj) {
+        throw new Error('End date must be after start date');
+      }
+
       // Validate MetaMask
       if (!window.ethereum) throw new Error('Please install MetaMask');
       const provider = new ethers.BrowserProvider(window.ethereum);
@@ -102,7 +162,6 @@ export default function CreateElection() {
       if (!electionName.trim()) throw new Error('Provide a valid election name');
 
       // Get the corresponding user_ids for blockchain interaction
-      // This is the key change - using user_id instead of _id for the blockchain
       const selectedCandidates = selectedCandidateIds.map(id => {
         const user = users.find(u => u._id === id);
         return user ? user.user_id : null;
@@ -117,7 +176,9 @@ export default function CreateElection() {
         electionName, 
         voters, 
         selectedCandidates,
-        originalCandidateIds: selectedCandidateIds
+        originalCandidateIds: selectedCandidateIds,
+        startDateTime,
+        endDateTime
       });
 
       // Calculate deposit amount
@@ -143,8 +204,6 @@ export default function CreateElection() {
       const electionAddress = ethers.getAddress('0x' + electionCreatedEvent.topics[2].slice(-40));
 
       // Prepare backend payload
-      const startDate = new Date().toISOString();
-      const endDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
       const filteredApplicableFields = applicableFields.filter(
         field => field.field.trim() && field.value.trim()
       );
@@ -156,8 +215,8 @@ export default function CreateElection() {
         candidate_id: selectedCandidates, // Using user_id directly
         contractAddress: electionAddress,
         status: 'upcoming',
-        startDate,
-        endDate,
+        startDate: startDateTime,
+        endDate: endDateTime,
         description,
         applicableFields: filteredApplicableFields,
         results: [],
@@ -255,6 +314,58 @@ export default function CreateElection() {
                 className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 rows="4"
               />
+            </div>
+
+            {/* Start Date and Time */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Start Date
+                </label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={e => setStartDate(e.target.value)}
+                  className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Start Time
+                </label>
+                <input
+                  type="time"
+                  value={startTime}
+                  onChange={e => setStartTime(e.target.value)}
+                  className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </div>
+
+            {/* End Date and Time */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  End Date
+                </label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={e => setEndDate(e.target.value)}
+                  className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  End Time
+                </label>
+                <input
+                  type="time"
+                  value={endTime}
+                  onChange={e => setEndTime(e.target.value)}
+                  className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
             </div>
 
             <div>
