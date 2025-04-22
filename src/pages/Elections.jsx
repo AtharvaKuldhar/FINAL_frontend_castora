@@ -71,22 +71,27 @@ const Elections = () => {
 
   const handlePublishResults = async (electionId) => {
     try {
-      // Request MetaMask connection
-      const { ethers } = window;
-      if (!ethers || !window.ethereum) {
-        alert('Please install MetaMask to proceed.');
+      // Ensure MetaMask is detected
+      if (!window.ethereum) {
+        alert('MetaMask is not detected. Please ensure it is installed and enabled.');
         return;
       }
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const { ethers } = window; // Use ethers from window
+      if (!ethers) {
+        alert('Ethers.js is not loaded. Please check your setup.');
+        return;
+      }
+      const provider = new ethers.BrowserProvider(window.ethereum); // Use BrowserProvider (ethers v6)
+      // Request account access to ensure MetaMask is active
       await provider.send('eth_requestAccounts', []);
-      const signer = provider.getSigner();
+      const signer = await provider.getSigner();
       
-      // Import ElectionABI dynamically (assuming it's available)
+      // Import ElectionABI dynamically
       const response = await axios.get('http://localhost:5001/abi/ElectionABI.json'); // Adjust path as needed
       const ElectionABI = response.data;
 
       // Connect to the contract
-      const contractAddress = currentElections.find(e => e._id === electionId)?.election_address; // Fetch from elections data
+      const contractAddress = currentElections.find(e => e._id === electionId)?.election_address;
       if (!contractAddress) throw new Error('Contract address not found');
       const contract = new ethers.Contract(contractAddress, ElectionABI, signer);
 
