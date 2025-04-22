@@ -125,7 +125,7 @@ const About = () => {
                 <Shield size={24} className="text-green-400" />
               </div>
               <div className="font-mono text-lg text-green-400">Loading system data...</div>
-              <div className="mt-2 font-mono text-xs text-green-500">CYBR/COMM v1.0</div>
+              <div className="mt-2 font-mono text-xs text-green-500">ChainVote v1.0</div>
             </div>
           </div>
         ) : (
@@ -145,7 +145,7 @@ const About = () => {
                   <Info size={32} className="text-green-400" />
                 </div>
                 <h1 className="text-3xl md:text-4xl font-bold font-mono text-green-400 mb-2">
-                  {'>'} ABOUT_CYBR/COMM
+                  {'>'} ABOUT_ChainVote
                 </h1>
                 <div className="w-16 h-1 bg-green-500 mx-auto mb-4"></div>
                 <p className="text-green-300 opacity-80 font-mono text-sm md:text-base max-w-xl mx-auto">
@@ -168,7 +168,7 @@ const About = () => {
                 </div>
                 <div className="pl-2 border-l-2 border-green-500/30">
                   <p className="text-green-300 leading-relaxed">
-                    CYBR/COMM is designed with security and transparency at its core. Our platform 
+                    ChainVote is designed with security and transparency at its core. Our platform 
                     leverages advanced cryptographic techniques to ensure votes cannot be tampered with, 
                     while maintaining an intuitive user experience. Community administrators can create 
                     custom fields to collect relevant voter information, design tailored ballots, and 
@@ -311,7 +311,7 @@ const About = () => {
                     <span className="text-green-500 mr-2 font-mono">$</span>
                     <span className="text-green-400 font-mono">ping</span>
                     <a href="mailto:castora@gmail.com" className="ml-2 text-green-300 hover:text-green-200 underline font-mono transition-colors">
-                      castora@gmail.com
+                      chainvote@gmail.com
                     </a>
                     <div className="ml-2 h-4 w-1 bg-green-500 animate-blink"></div>
                   </div>
@@ -325,7 +325,7 @@ const About = () => {
         <footer className="bg-gray-950 bg-opacity-90 p-4 border-t border-green-800/50 text-center">
           <div className="flex justify-center items-center space-x-4">
             <div className="h-1 w-1 bg-green-500 rounded-full animate-pulse"></div>
-            <p className="text-green-500 text-xs font-mono">&lt;/CYBR_COMM v1.0&gt;</p>
+            <p className="text-green-500 text-xs font-mono">&lt;/ChainVote v1.0&gt;</p>
             <div className="h-1 w-1 bg-green-500 rounded-full animate-pulse"></div>
           </div>
         </footer>

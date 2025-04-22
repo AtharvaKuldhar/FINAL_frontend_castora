@@ -69,10 +69,9 @@ const Sidebar = () => {
         <NavLink
           to="/communities/default/create"
           className={({ isActive }) =>
-            `p-3 rounded-lg text-lg transition ${
-              isActive
-                ? "bg-emerald-500 text-white font-semibold"
-                : "hover:bg-gray-700 hover:text-emerald-400"
+            `p-3 rounded-lg text-lg transition ${isActive
+              ? "bg-emerald-500 text-white font-semibold"
+              : "hover:bg-gray-700 hover:text-emerald-400"
             }`
           }
         >
@@ -82,10 +81,9 @@ const Sidebar = () => {
         <NavLink
           to="/communities/default/join"
           className={({ isActive }) =>
-            `p-3 rounded-lg text-lg transition ${
-              isActive
-                ? "bg-emerald-500 text-white font-semibold"
-                : "hover:bg-gray-700 hover:text-emerald-400"
+            `p-3 rounded-lg text-lg transition ${isActive
+              ? "bg-emerald-500 text-white font-semibold"
+              : "hover:bg-gray-700 hover:text-emerald-400"
             }`
           }
         >
@@ -96,10 +94,9 @@ const Sidebar = () => {
           to="/communities/default"
           end
           className={({ isActive }) =>
-            `p-3 rounded-lg text-lg transition ${
-              isActive
-                ? "bg-emerald-500 text-white font-semibold"
-                : "hover:bg-gray-700 hover:text-emerald-400"
+            `p-3 rounded-lg text-lg transition ${isActive
+              ? "bg-emerald-500 text-white font-semibold"
+              : "hover:bg-gray-700 hover:text-emerald-400"
             }`
           }
         >
@@ -107,13 +104,12 @@ const Sidebar = () => {
         </NavLink>
         <NavLink
           to="/profile/default"
-          className={`p-3 rounded-lg text-lg ${
-            location.pathname === `/profile/default`
-              ? "bg-white text-blue-600 font-bold"
-              : "hover:bg-blue-500"
-          }`}
+          className={`p-3 rounded-lg text-lg ${location.pathname === `/profile/default`
+              ? "bg-emerald-500 text-white font-semibold"
+              : "hover:bg-gray-700 hover:text-emerald-400"
+            }`}
         >
-         😸 My Profile
+          😸 My Profile
         </NavLink>
       </nav>
 
