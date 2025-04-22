@@ -3,7 +3,7 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/SidebarLeft';
 import VerticalCard from '../components/VerticalCard';
 import axios from 'axios';
-import { ethers } from 'ethers'; // Added direct import
+import { ethers } from 'ethers'; // Direct import
 
 const Elections = () => {
   const { id } = useParams();
@@ -77,11 +77,13 @@ const Elections = () => {
         alert('MetaMask is not detected. Please ensure it is installed and enabled.');
         return;
       }
-      const provider = new ethers.BrowserProvider(window.ethereum); // Use imported ethers
+      const provider = new ethers.BrowserProvider(window.ethereum);
       // Request account access to ensure MetaMask is active
-      await provider.send('eth_requestAccounts', []);
+      const accounts = await provider.send('eth_requestAccounts', []);
       const signer = await provider.getSigner();
-      
+      const signerAddress = await signer.getAddress();
+      console.log('Connected MetaMask address:', signerAddress);
+
       // Import ElectionABI dynamically
       const response = await axios.get('http://localhost:5001/abi/ElectionABI.json'); // Adjust path as needed
       const ElectionABI = response.data;
@@ -90,6 +92,13 @@ const Elections = () => {
       const contractAddress = currentElections.find(e => e._id === electionId)?.election_address;
       if (!contractAddress) throw new Error('Contract address not found');
       const contract = new ethers.Contract(contractAddress, ElectionABI, signer);
+
+      // Verify admin address
+      const contractAdmin = await contract.admin();
+      console.log('Contract admin address:', contractAdmin);
+      if (signerAddress.toLowerCase() !== contractAdmin.toLowerCase()) {
+        throw new Error('Connected MetaMask address does not match the contract admin address.');
+      }
 
       // Withdraw funds using MetaMask
       const tx = await contract.withdrawAllFunds({ gasLimit: 200000 });
@@ -130,6 +139,8 @@ const Elections = () => {
       console.error('Error publishing results or withdrawing funds:', error);
       if (error.code === 'ACTION_REJECTED') {
         alert('Transaction rejected by MetaMask. Please try again.');
+      } else if (error.message.includes('admin address')) {
+        alert('Error: The connected MetaMask address does not match the contract admin address. Please use the admin account that created the election.');
       } else {
         alert('Failed to publish results or withdraw funds. Please ensure you are the admin and try again.');
       }
