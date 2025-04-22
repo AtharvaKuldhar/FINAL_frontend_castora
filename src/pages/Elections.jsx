@@ -4,6 +4,7 @@ import Sidebar from '../components/SidebarLeft';
 import VerticalCard from '../components/VerticalCard';
 import axios from 'axios';
 import { ethers } from 'ethers'; // Direct import
+import ElectionABI from '../abi/ElectionABI.json';
 
 const Elections = () => {
   const { id } = useParams();
@@ -84,11 +85,7 @@ const Elections = () => {
       const signerAddress = await signer.getAddress();
       console.log('Connected MetaMask address:', signerAddress);
 
-      // Import ElectionABI dynamically
-      const response = await axios.get('http://localhost:5001/abi/ElectionABI.json'); // Adjust path as needed
-      const ElectionABI = response.data;
-
-      // Connect to the contract
+      // Use the imported ElectionABI directly
       const contractAddress = currentElections.find(e => e._id === electionId)?.election_address;
       if (!contractAddress) throw new Error('Contract address not found');
       const contract = new ethers.Contract(contractAddress, ElectionABI, signer);
