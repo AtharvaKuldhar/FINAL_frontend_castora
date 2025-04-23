@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { ethers } from 'ethers';
-import ElectionFactoryABI from '../abi/ElectionFactoryABI.json';
+import ElectionFactoryABI from '../abi/ElectionFactoryAbi.json';
 
 const ELECTION_FACTORY_ADDRESS = '0x01863adD09dE27b3d74F05328316E793679342EC';
 
@@ -54,7 +54,7 @@ export default function CreateElection() {
       try {
         setLoadingCandidates(true);
         const response = await axios.post(
-          'https://e-voting-blockchain-5n6q.onrender.com/getCandidates',
+          'http://localhost:5001/getCandidates',
           { community_key: communityKey },
           { headers: { token: `Bearer ${token}`, 'Content-Type': 'application/json' } }
         );
@@ -229,7 +229,7 @@ export default function CreateElection() {
 
       // Send to backend
       const response = await axios.post(
-        'https://e-voting-blockchain-5n6q.onrender.com/createElection',
+        'http://localhost:5001/createElection',
         payload,
         {
           headers: {
