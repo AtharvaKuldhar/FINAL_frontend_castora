@@ -34,7 +34,7 @@ const Results = () => {
         const token = localStorage.getItem('token');
 
         // Fetch elections from backend API
-        const response = await axios.get('http://localhost:5001/getElections', {
+        const response = await axios.get('https://e-voting-blockchain-5n6q.onrender.com/getElections', {
           params: { community_key },
           headers: { token: `Bearer ${token}` },
         });
@@ -66,7 +66,7 @@ const Results = () => {
             // Function to fetch candidates with their vote counts from the backend
             const fetchCandidatesWithVotes = async (electionId, candidates) => {
               try {
-                const response = await axios.post('http://localhost:5001/getSelectedCandidates', {
+                const response = await axios.post('https://e-voting-blockchain-5n6q.onrender.comgetSelectedCandidates', {
                   electionId: electionId
                 }, {
                   headers: {

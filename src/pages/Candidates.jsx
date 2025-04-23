@@ -32,7 +32,7 @@ const Candidate = () => {
         if (!electionId) throw new Error('No election selected');
 
         const response = await axios.post(
-          'http://localhost:5001/getSelectedCandidates',
+          'https://e-voting-blockchain-5n6q.onrender.com/getSelectedCandidates',
           { electionId },
           {
             headers: { token: `Bearer ${localStorage.getItem('token')}` },
@@ -67,7 +67,7 @@ const Candidate = () => {
 
     const token = localStorage.getItem('token');
     axios
-      .post('http://localhost:5001/verifier', { token })
+      .post('https://e-voting-blockchain-5n6q.onrender.com/verifier', { token })
       .then((response) => {
         if (response.status === 200) {
           console.log('Verifier Response:', response.data);
