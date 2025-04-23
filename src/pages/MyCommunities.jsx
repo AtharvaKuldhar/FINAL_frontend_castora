@@ -16,7 +16,7 @@ const MyCommunities = () => {
     const fetchCommunities = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get('http://localhost:5001/myCommunity', {
+        const response = await axios.get('https://e-voting-blockchain-5n6q.onrender.com/myCommunity', {
           headers: {
             'token': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -44,7 +44,7 @@ const MyCommunities = () => {
       
       for (const community of adminCommunities) {
         // Fetch elections for this community
-        const electionsResponse = await axios.get('http://localhost:5001/getElections', {
+        const electionsResponse = await axios.get('https://e-voting-blockchain-5n6q.onrender.com/getElections', {
           headers: {
             'token': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -82,7 +82,7 @@ const MyCommunities = () => {
     try {
       const token = localStorage.getItem('token');
       // Call the backend to fetch elections
-      const response = await axios.get('http://localhost:5001/getElections', {
+      const response = await axios.get('https://e-voting-blockchain-5n6q.onrender.com/getElections', {
         headers: {
           'token': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -118,7 +118,7 @@ const MyCommunities = () => {
     try {
       const token = localStorage.getItem('token');
       // Call the backend to fetch elections
-      const response = await axios.get('http://localhost:5001/getElections', {
+      const response = await axios.get('https://e-voting-blockchain-5n6q.onrender.com/getElections', {
         headers: {
           'token': `Bearer ${token}`,
           'Content-Type': 'application/json',

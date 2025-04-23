@@ -54,7 +54,7 @@ const JoinCommunity = () => {
       }
 
       const verifyRes = await axios.post(
-        'http://localhost:5001/join_community/test',
+        'https://e-voting-blockchain-5n6q.onrender.com/join_community/test',
         { CollectionId: trimmedCommunityId, password: trimmedPassword },
         {
           headers: {
@@ -71,7 +71,7 @@ const JoinCommunity = () => {
       }
 
       const schemaRes = await axios.post(
-        'http://localhost:5001/getSchema',
+        'https://e-voting-blockchain-5n6q.onrender.com/getSchema',
         { collection_key: trimmedCommunityId },
         {
           headers: {
@@ -115,7 +115,7 @@ const JoinCommunity = () => {
       const dataToSend = fields.map((field) => formData[field.id] || '');
 
       const response = await axios.post(
-        'http://localhost:5001/join_community',
+        'https://e-voting-blockchain-5n6q.onrender.com/join_community',
         {
           CollectionId: communityId.trim(),
           data: dataToSend,

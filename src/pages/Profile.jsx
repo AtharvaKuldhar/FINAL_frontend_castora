@@ -24,7 +24,7 @@ const Profile = () => {
         setLoading(true);
         
         // Fetch main user data and communities with elections
-        const userResponse = await axios.get("http://localhost:5001/activeElection", { headers });
+        const userResponse = await axios.get("https://e-voting-blockchain-5n6q.onrender.com/activeElection", { headers });
         
         if (userResponse.data) {
           // Simulate loading with delay for visual effect
@@ -67,7 +67,7 @@ const Profile = () => {
         }
 
         // Fetch voted count separately
-        const votedRes = await axios.get("http://localhost:5001/voted", { headers });
+        const votedRes = await axios.get("https://e-voting-blockchain-5n6q.onrender.com/voted", { headers });
         setVotedCount(votedRes.data?.count || 0);
         
         setTimeout(() => {

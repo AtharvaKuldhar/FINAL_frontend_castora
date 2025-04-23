@@ -54,7 +54,7 @@ export default function CreateElection() {
       try {
         setLoadingCandidates(true);
         const response = await axios.post(
-          'http://localhost:5001/getCandidates',
+          'https://e-voting-blockchain-5n6q.onrender.com/getCandidates',
           { community_key: communityKey },
           { headers: { token: `Bearer ${token}`, 'Content-Type': 'application/json' } }
         );
@@ -229,7 +229,7 @@ export default function CreateElection() {
 
       // Send to backend
       const response = await axios.post(
-        'http://localhost:5001/createElection',
+        'https://e-voting-blockchain-5n6q.onrender.com/createElection',
         payload,
         {
           headers: {
